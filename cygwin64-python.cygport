@@ -1,0 +1,90 @@
+CROSS_HOST="x86_64-pc-cygwin"
+inherit cross
+
+NAME="cygwin64-python"
+VERSION=2.7.3
+RELEASE=1
+CATEGORY="Devel"
+SUMMARY="Python library for Cygwin 64bit toolchain"
+DESCRIPTION="Python is an interpreted, interactive object-oriented
+programming language suitable (amongst other uses) for distributed
+application development, scripting, numeric computing and system
+testing.  Python is often compared to Tcl, Perl, Java, JavaScript,
+Visual Basic or Scheme."
+HOMEPAGE="http://www.python.org/"
+SRC_URI="http://www.python.org/ftp/python/${PV}/Python-${VERSION}.tar.bz2"
+SRC_DIR="Python-${VERSION}"
+PATCH_URI="
+	2.6.5-export-PySignal_SetWakeupFd.patch
+	2.7.3-cross-configure.patch
+"
+
+DIFF_EXCLUDES="plat-cygwin pyconfig.h.in"
+
+NO_AUTOHEADER=1
+LDFLAGS+=" -L."
+
+src_compile() {
+	cd ${S}
+	cygautoreconf
+	cd ${B}
+	cygconf \
+		--enable-shared \
+		--enable-ipv6 \
+		--with-libc= --with-libm= \
+		ac_cv_buggy_getaddrinfo=no \
+		ac_cv_func_bind_textdomain_codeset=yes \
+		ac_cv_no_strict_aliasing_ok=yes \
+		ac_cv_opt_olimit_ok=no ac_cv_olimit_ok=no \
+		ac_cv_pthread_is_default=yes \
+		ac_cv_sizeof_off_t=8 \
+		ac_cv_sizeof_time_t=8 \
+		ac_cv_sizeof_pthread_t=8 \
+		ac_cv_pthread_system_supported=no \
+		ac_cv_have_chflags=no ac_cv_have_lchflags=no \
+		ac_cv_x87_double_rounding=yes \
+		ac_cv_tanh_preserves_zero_sign=yes \
+		ac_cv_wchar_t_signed=no \
+		ac_cv_rshift_extends_sign=yes \
+		ac_cv_broken_nice=yes ac_cv_broken_poll=no \
+		ac_cv_working_tzset=yes \
+		ac_cv_have_long_long_format=yes \
+		MACHDEP=cygwin ac_sys_system=CYGWIN_NT-6.1
+
+	# This Parser/pgen.exe is a host executable and can't be run
+	touch --date='next hour' Parser/pgen.stamp
+	cygmake python.exe
+}
+
+src_install() {
+	cd ${B}
+	dodir /usr
+	cygmake -j1 bininstall inclinstall DESTDIR=${D}
+	dolib libpython${VERSION%.*}.dll.a
+
+	insinto ${CROSS_LIBDIR}/pkgconfig
+	newins Misc/python.pc python-${VERSION%.*}.pc
+
+	rm -f ${D}${CROSS_BINDIR}/python{,2,*.exe}
+
+	cat > ${D}${CROSS_BINDIR}/python${VERSION%.*}-config <<_EOF
+#! /bin/sh
+version=${VERSION%.*}
+
+while test \$# -gt 0; do
+  case "\$1" in
+  --prefix|--exec-prefix)
+    echo ${CROSS_PREFIX} ;;
+  --cflags|--includes)
+    echo "-I${CROSS_INCLUDEDIR}/python\$version" ;;
+  --ldflags|--libs)
+    echo "-L${CROSS_LIBDIR} -lpython\$version" ;;
+  esac
+  shift
+done
+
+exit 0
+_EOF
+	chmod +x ${D}${CROSS_BINDIR}/python${VERSION%.*}-config
+
+}

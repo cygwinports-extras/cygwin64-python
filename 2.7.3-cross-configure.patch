@@ -1,0 +1,13 @@
+--- configure.in.orig	2013-01-21 01:50:25.194679656 -0600
++++ configure.in	2013-01-21 01:50:52.524705039 -0600
+@@ -1911,8 +1911,8 @@
+ 		LDSHARED='$(CC) -Wl,-G,-Bexport'
+ 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+ 	CYGWIN*)
+-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
+-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
++		LDSHARED='$(CC) -shared -Wl,--enable-auto-image-base'
++		LDCXXSHARED='$(CXX) -shared -Wl,--enable-auto-image-base';;
+ 	atheos*)
+ 		LDSHARED="gcc -shared"
+ 		LDCXXSHARED="g++ -shared";;
